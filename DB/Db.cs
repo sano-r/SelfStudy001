@@ -56,4 +56,8 @@ public class PizzaDb
         }).ToList(); // コンストラクタを更新したリストで新しいメモリ空間を確保
         return update;
     }
+
+    public static void RemovePizza(int id){
+        _pizzas = _pizzas.FindAll(pizza => pizza.Id != id).ToList();
+    }
 }

@@ -4,10 +4,13 @@ using PizzaStore.DB;
 using PizzaStore.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("Pizzas") ?? "Data Source=Pizzas.db";
 
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("items"));
+//メモリ内DBをSqlServerに置き換える
+//builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("items"));
+builder.Services.AddSqlServer<PizzaDb>(connectionString);
 
 builder.Services.AddSwaggerGen(c =>{
     c.SwaggerDoc("v1", new OpenApiInfo{
@@ -54,7 +57,6 @@ app.MapDelete("/pizzas/{id}", async (PizzaDb db, int id) => {
     await db.SaveChangesAsync();
     return Results.Ok();
 }); // idに紐づくピザを削除
-
 
 
 app.Run();

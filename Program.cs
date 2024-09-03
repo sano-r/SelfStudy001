@@ -1,4 +1,6 @@
 using Microsoft.OpenApi.Models;
+using PizzaStore.DB;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,12 @@ if(app.Environment.IsDevelopment()){
     });
 }
 
-app.MapGet("/", () => "Hello World!");
+//app.MapGet("/", () => "Hello World!");
+
+app.MapGet("/pizzas/{id}", (int id) => PizzaDb.GetPizza(id)); // idに紐づくピザを取得
+app.MapGet("/pizzas", () => PizzaDb.GetPizzas()); // すべてのピザを取得
+app.MapPost("/pizzas", (Pizza pizza) => PizzaDb.CreatePizza(pizza)); // 新しいピザを追加
+app.MapPut("/pizzas", (Pizza pizza) => PizzaDb.UpdatePizza(pizza)); // ピザを更新
+app.MapDelete("/pizzas/{id}", (int id) => PizzaDb.RemovePizza(id)); // idに紐づくピザを削除
 
 app.Run();

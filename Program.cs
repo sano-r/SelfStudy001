@@ -1,10 +1,17 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PizzaStore.DB;
-
+using PizzaStore.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("Pizzas") ?? "Data Source=Pizzas.db";
 
 builder.Services.AddEndpointsApiExplorer();
+
+//メモリ内DBをSqlServerに置き換える
+//builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("items"));
+builder.Services.AddSqlServer<PizzaDb>(connectionString);
+
 builder.Services.AddSwaggerGen(c =>{
     c.SwaggerDoc("v1", new OpenApiInfo{
         Title = "PizzaStore API",
@@ -24,10 +31,32 @@ if(app.Environment.IsDevelopment()){
 
 //app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/pizzas/{id}", (int id) => PizzaDb.GetPizza(id)); // idに紐づくピザを取得
-app.MapGet("/pizzas", () => PizzaDb.GetPizzas()); // すべてのピザを取得
-app.MapPost("/pizzas", (Pizza pizza) => PizzaDb.CreatePizza(pizza)); // 新しいピザを追加
-app.MapPut("/pizzas", (Pizza pizza) => PizzaDb.UpdatePizza(pizza)); // ピザを更新
-app.MapDelete("/pizzas/{id}", (int id) => PizzaDb.RemovePizza(id)); // idに紐づくピザを削除
+app.MapGet("/pizzas", async (PizzaDb db) => await db.Pizzas.ToListAsync()); // すべてのピザを取得
+
+app.MapGet("/pizzas/{id}", async (PizzaDb db, int id) => await db.Pizzas.FindAsync(id)); // idに紐づくピザを取得
+
+app.MapPost("/pizzas", async (PizzaDb db, Pizza pizza) => {
+    await db.Pizzas.AddAsync(pizza);
+    await db.SaveChangesAsync();
+    return Results.Created($"/pizza/{pizza.Id}", pizza);
+ }); // 新しいピザを追加
+
+app.MapPut("/pizzas/{id}", async (PizzaDb db, Pizza updatepizza, int id) => {
+    var pizza = await db.Pizzas.FindAsync(id);
+    if(pizza is null) return Results.NotFound();
+    pizza.Name = updatepizza.Name;
+    pizza.Description = updatepizza.Description;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}); // ピザを更新
+
+app.MapDelete("/pizzas/{id}", async (PizzaDb db, int id) => {
+    var pizza = await db.Pizzas.FindAsync(id);
+    if(pizza is null) return Results.NotFound();
+    db.Pizzas.Remove(pizza);
+    await db.SaveChangesAsync();
+    return Results.Ok();
+}); // idに紐づくピザを削除
+
 
 app.Run();

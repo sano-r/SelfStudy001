@@ -20,14 +20,28 @@ builder.Services.AddSwaggerGen(c =>{
     });
 });
 
-var app = builder.Build();
+// 1) 一意の文字列を定義
+string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
+// 2) 許可されたドメインを定義。 今回は"http://example.com" と "*" = all
+// ドメインはテスト目的のみに使用。
+builder.Services.AddCors(options => {
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+    builder => {
+        builder.WithOrigins("http://example.com", "*");
+    });
+});
+
+var app = builder.Build();
 if(app.Environment.IsDevelopment()){
     app.UseSwagger();
     app.UseSwaggerUI(c => {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "PizzaStore API V1");
     });
 }
+
+// use the capability
+app.UseCors(MyAllowSpecificOrigins);
 
 //app.MapGet("/", () => "Hello World!");
 

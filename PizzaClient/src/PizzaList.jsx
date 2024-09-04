@@ -1,10 +1,23 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
+import { TextField, Box, Button, List, ListItem, IconButton, ListItemText } from "@mui/material";
+import { Delete, Edit } from "@mui/icons-material";
 
 function PizzaList({name, data, onCreate, onUpdate, onDelete, error}){
     const [formData, setFormData] = useState({id:'', name:'', description:''});
     const [editingId, setEditingId] = useState(null);
 
+    useEffect(() => {
+        if(editingId === null){
+            setFormData({id:'', name:'', description:''});
+        }else{
+            const currentItem = data.find(item => item.id === editingId);
+            setFormData(currentItem);
+        }
+    },[editingId, data]);
+
     const handleFormChange = (e) => {
+        console.log(`handleFormChange: ${e.target.name} ${e.target.value}`);
+
         const {name, value} = e.target;
         setFormData(prevData => ({
             ...prevData,
@@ -15,66 +28,70 @@ function PizzaList({name, data, onCreate, onUpdate, onDelete, error}){
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (editingId) {
+        console.log(`formData: ${JSON.stringify(formData)}`);
+
+        if (editingId !== null) {
+            console.log(`update item: ${JSON.stringify(formData)}`);
             onUpdate(formData);
-            setEditingId(null);
         } else {
             onCreate(formData);
         }
         setFormData({ id: '', name: '', description: '' });
+        setEditingId(null);
     };
 
-    const handleEdit = item => {
-        setEditingId(item.id);
-        setFormData({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-
-        })
+    const handleEdit = id => {
+        setEditingId(id);
     }
 
     const handleCancelEdit = () => {
-        setEditingId(null);
         setFormData({id:'', name:'', description:''});
+        setEditingId(null);
+    }
+
+    const handleDelete = id => {
+        onDelete(id);
     }
 
     
     return(
-        <div>
-            <h2>New {name}</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
+        <Box className="Box" sx={{display: 'flex', flexDirection: 'column', alignItems:'center'}}>
+            <h2>{name}</h2>
+            <form onSubmit={handleSubmit} style={{display:'flex', flexDirection: 'row',alignItems: 'center', gap:8}}>
+                <TextField
+                    label="Name"
                     name="name"
-                    placeholder="Name"
                     value={formData.name}
                     onChange={handleFormChange}
                 />
-                <input
-                    type="text"
+                <TextField
+                    label="Description"
                     name="description"
-                    placeholder="Description"
                     value={formData.description}
                     onChange={handleFormChange}
                 />
-                <button type="submit">{editingId ? 'Update' : 'Create'}</button>
-                {editingId && <button type="button" onClick={handleCancelEdit}>Cancel</button>}
+                <Button sx={{mr:1}} variant="contained" type="submit">{editingId === null ? 'Create' : 'Update'}</Button>
+                {editingId !== null && <Button variant="contained" color="secondary" onClick={handleCancelEdit}>Cancel</Button>}
             </form>
             {error && <div>{error.message}</div>}
             <h2>{name}s</h2>
-            <ul>
+            <List sx={{ width: '100%', maxWidth: 360 }}>
                 {data.map(item => (
-                    <li key={item.id}>
-                        <div>{item.name} - {item.description}</div>
-                        <div>
-                            <button onClick={() => handleEdit(item)}>Edit</button>
-                            <button onClick={() => onDelete(item.id)}>Delete</button>
-                        </div>
-                    </li>
+                    <ListItem key={item.id} secondaryAction={
+                        <>
+                            <IconButton edge="end" area-label="edit" onClick={() => handleEdit(item.id)}>
+                                <Edit />
+                            </IconButton>
+                            <IconButton edge="end" area-label="delete" onClick={() => onDelete(item.id)}>
+                                <Delete />
+                            </IconButton>
+                        </>
+                    }>
+                        <ListItemText primary={item.name} secondary={item.description} />
+                    </ListItem>
                 ))}
-            </ul>
-        </div>
+            </List>
+        </Box>
     );
 
 }
